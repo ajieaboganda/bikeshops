@@ -12,16 +12,16 @@ AS $$
 DECLARE 
     _the_geom GEOMETRY;
 	--The name of your table in cartoDB
-	_the_table TEXT := 'hearhere';
+	_the_table TEXT := 'bikeshops';
 BEGIN
     --Convert the GeoJSON to a geometry type for insertion. 
     _the_geom := ST_SetSRID(ST_GeomFromGeoJSON(_geojson),4326); 
 	
 
 	--Executes the insert given the supplied geometry, description, and username, while protecting against SQL injection.
-    EXECUTE ' INSERT INTO '||quote_ident(_the_table)||' (the_geom, name, note, hear)
+    EXECUTE ' INSERT INTO '||quote_ident(_the_table)||' (the_geom, name, address, comments)
             VALUES ($1, $2, $3, $4)
-            ' USING _the_geom, _name, _note, _hear;
+            ' USING _the_geom, _name, _address, _comments;
             
     RETURN 1;
 END;
