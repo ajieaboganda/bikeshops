@@ -1,6 +1,8 @@
-# MH aWHEREness
+# Bike Shops
 
-MH aWHEREness is the viewing and crowdmapping platform for the mental health awhereness project.
+This contains the code for Bike Shops Map, used for crowdsourcing Bike Shops to help Cyclists
+
+Source code originally based on MH aWHEREness which is the viewing and crowdmapping platform for the mental health awhereness project.
 
 This was initially based on Raphael Dumas' repository - [crowdmap-basic](https://github.com/radumas/crowdmap-basic).
 
