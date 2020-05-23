@@ -163,7 +163,7 @@
                     of: "#map"
                 },
                 buttons: {
-                    "Submit": setData,
+                    Submit: setData,
                     Cancel: function() {
                         dialog.dialog("close");
                         refreshLayer();
@@ -176,7 +176,7 @@
                 }
             });
 
-            form = dialog.find("form").on("Submit", function(event) {
+            form = dialog.find("form").on("submit", function(event) {
                 event.preventDefault();
                 setData();
             });
