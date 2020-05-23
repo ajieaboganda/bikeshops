@@ -4,8 +4,8 @@ DROP FUNCTION IF EXISTS insert_crowd_mapping_data(text,text,text,text);
 CREATE OR REPLACE FUNCTION insert_crowd_mapping_data (
     _geojson TEXT,
     _name TEXT,
-    _note TEXT,	
-    _hear TEXT)    
+    _address TEXT,	
+    _comments TEXT)    
 --Has to return something in order to be used in a "SELECT" statement
 RETURNS integer
 AS $$
