@@ -92,7 +92,7 @@
             };
 
             var cartoData = null; //These adds data from Carto using the SQL API, declares variables, and writes the SQL selection query
-            var sqlQuery = "SELECT the_geom, placename, address, comments " + config.cartoTablename;
+            var sqlQuery = "SELECT the_geom, name, address, comments " + config.cartoTablename;
             var map = L.map('map', {
                 center: config.mapcenter,
                 zoom: 5
