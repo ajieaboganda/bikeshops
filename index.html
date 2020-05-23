@@ -188,30 +188,29 @@
 
                 drawnItems.eachLayer(function(layer) {
                     var drawing = "'" + JSON.stringify(layer.toGeoJSON().geometry) + "'", //Converts the drawing to a GeoJSON
-                    var sql = "SELECT " + config.cartoInsertFunction + "("; //Constructs the SQL Query from the entered parameters on the dialog/form
+                        sql = "SELECT " + config.cartoInsertFunction + "("; //Constructs the SQL Query from the entered parameters on the dialog/form
                     sql += drawing;
                     sql += "," + enteredName;
                     sql += "," + enteredAddress;                    
                     sql += "," + enteredComments;
                     sql += ");";
                     console.log(drawing);
-                    
-                    var cartoDBusername = "marjorieaboganda"
-                        $.ajax({
-                            type: 'POST',
-                            url: 'https://' + config.cartoUsername + '.carto.com/api/v2/sql', //Sending the data to Carto
-                            crossDomain: true,
-                            data: {
-                                "q": sql
-                            },
-                            dataType: 'json',
-                            success: function(responseData, textStatus, jqXHR) {
-                                console.log("Data saved");
-                            },
-                            error: function(responseData, textStatus, errorThrown) {
-                                console.log("Problem saving the data");
-                            }
-                        });
+
+                    $.ajax({
+                        type: 'POST',
+                        url: 'https://' + config.cartoUsername + '.carto.com/api/v2/sql', //Sending the data to Carto
+                        crossDomain: true,
+                        data: {
+                            "q": sql
+                        },
+                        dataType: 'json',
+                        success: function(responseData, textStatus, jqXHR) {
+                            console.log("Data saved");
+                        },
+                        error: function(responseData, textStatus, errorThrown) {
+                            console.log("Problem saving the data");
+                        }
+                    });
                     var newData = layer.toGeoJSON();
                         newData.properties.name = name.value;
                         newData.properties.address = address.value;
