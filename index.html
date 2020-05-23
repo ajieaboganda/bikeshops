@@ -190,9 +190,9 @@
                     var drawing = "'" + JSON.stringify(layer.toGeoJSON().geometry) + "'", //Converts the drawing to a GeoJSON
                         sql = "SELECT " + config.cartoInsertFunction + "("; //Constructs the SQL Query from the entered parameters on the dialog/form
                     sql += drawing;
-                    sql += "," + enteredname;
-                    sql += "," + enteredaddress;                    
-                    sql += "," + enteredcomments;
+                    sql += "," + enteredName;
+                    sql += "," + enteredAddress;                    
+                    sql += "," + enteredComments;
                     sql += ");";
                     console.log(drawing);
 
