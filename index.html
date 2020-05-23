@@ -1,232 +1,229 @@
 <!DOCTYPE html>
-<!--Initially based on https://github.com/radumas/crowdmap-basic and https://github.com/mjfoster83/web-map-workshop/blob/master/7_advancedMapping_CartoDB/index-completed.html-->
+<!--Based on https://github.com/mjfoster83/web-map-workshop/blob/master/7_advancedMapping_CartoDB/index-completed.html-->
 <html>
+  <head>
+    <title>Leaflet to Carto - Point Collection Tool Beta</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@0.7.7/dist/leaflet.css"
+  integrity="sha384-99ZJFcuBCh9c/V/+8YwDX/TUGG8JWMG+gKFJWzk0BZP3IoDMN+pLGd3/H0yjg4oa"
+  crossorigin=""/>
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.12/leaflet.draw.css"/>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+  </head>
+  <body>
+    <div id="wrapper">
+      <div id="header">
+        <h1>Leaflet Draw  Collection Tool</h1>
+      </div>
+      <div id="map"></div>
+      <div id="controls">
+        <p>Click points for more information, or add your own.</br></p>
+        <input type="button" onclick="startEdits()" value="Click to Start Editing">
+        <input type="button" onclick="stopEdits()" value="Stop Your Editing Session"><br>
+        <div id="credits"><p>&copy;2015, Mike Foster and Raphael Dumas</p></div>
+      </div>
+    </div>
 
-<head>
-    <meta charset="utf-8" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
-    <meta content="IE=edge" http-equiv="X-UA-Compatible">
-    <title>Bike Shops</title>
-    <link href="https://unpkg.com/leaflet@0.7.7/dist/leaflet.css" rel="stylesheet">
-    <link href="//cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" rel="stylesheet">
-    <link href="//code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet" type="text/css">
-    <link href="https://rawgit.com/k4r573n/leaflet-control-osm-geocoder/master/Control.OSMGeocoder.css" rel="stylesheet">
-    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.67.0/dist/L.Control.Locate.min.css" rel="stylesheet">
-    <link href="https://rawgit.com/mapshakers/leaflet-control-window/master/src/L.Control.Window.css" rel="stylesheet">
-    <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css' rel='stylesheet' />
-    <!--	<link href='https://github.com/anditabinas/mhawhereness/blob/master/leaflet-routing-machine.css' rel='stylesheet' /> -->
-    <!--	<link rel="stylesheet" href="https://github.com/anditabinas/mhawhereness/blob/master/css/MarkerCluster.css" /> -->
-    <!--	<link rel="stylesheet" href="https://github.com/anditabinas/mhawhereness/blob/master/leaflet-easy-button.css" /> -->
-    <!--	<link rel="stylesheet" href="https://github.com/anditabinas/mhawhereness/blob/master/leaflet-tag-filter-button.css" /> -->
+    <div id="dialog" title="Tell us About this Drawing">     
+      <form>
+        <fieldset style="border: none;">
+          <ul style="list-style-type: none; padding-left: 0px">
+            <li><label for="username">Your Name</label></li>
+            <li><input type="text" name="username" id="username" placeholder="Enter your name" class="text ui-widget-content ui-corner-all"></li>
+            <li><label for="description">About this</label></li>
+            <li><input type="text" name="description" id="description" placeholder="Description for this point" class="text ui-widget-content ui-corner-all"></li>
+          </ul>
+          <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+        </fieldset>
+      </form>
+    </div>
 
-</head>
+    <script src="https://unpkg.com/leaflet@0.7.7/dist/leaflet.js"
+      integrity="sha384-Lh7SNUss9JoImCvc96eCUnLX3HvY4kb0UZCWZbYWvceJ+o5CJeOJqqNoheaGkNHT"
+      crossorigin=""></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.12/leaflet.draw.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <script>
 
-<body>
+		//TODO: Change to your username, insert function on Carto, and Carto tablename
+		var config = {
+			cartoUsername : "raphaeld",
+			cartoInsertFunction : "insert_crowd_mapping_data",
+			cartoTablename : "crowdmap_basic",
+			mapcenter: [43.6525, -79.381667],
+			drawOptions: {
+				draw : {
+					polygon : true,
+					polyline : true,
+					rectangle : true,
+					/*Circles aren't supported by the GeoJSON spec, so won't get sent to the database properly. 
+					*http://stackoverflow.com/a/16944309/4047679
+					*/
+					circle : false,
+                    circlemarker : false,
+					marker: true
+				},
+				edit : false,
+				remove: false
+			}
+		};
 
-    <body oncontextmenu="return false">
-        <div id="wrapper">
-            <div id="header">                
-                <h1>Bike Shops</h1>
-                <h2>Help other Cyclists find the nearest bike shops!</a></h2>
-            </div>
-            <div id="controls">
-                <input onclick="startEdits()" type="button" value="ADD DATA">
-                <input onclick="stopEdits()" type="button" value="VIEW DATA">
-            </div>
-            <div id="map"></div>
-            <div id="credits">
-                <p>Bike Shops &copy;2020, Ajie Aboganda</p>
-                <p>Github Leaflet Draw Collection Tool &copy;2015, Mike Foster and Raphael Dumas</p>
-                <p>Mental Health aWHEREness &copy;2019, Sandra Tabinas</p>
-            </div>
-        </div>
-        <div id="dialog" title="Add the Bike Shops!">
-            <form>
-                <fieldset style="border: none;">
-                    <ul style="list-style-type: none; padding-left: 0px">
-                        <li><label for="name">Name of Bike Shop</label></li>
-                        <li><input id="name" name="name" placeholder="Enter the name of the Bike Shop" size="40" type="text" required></li> 
-                        <li><label for="address">Address</label></li>
-                        <li><textarea cols="40" id="comments" name="comments" placeholder="Enter the Address of the Bike Shop" rows="5"></textarea></li>
-                        <li><label for="comments">Comments</label></li>
-                        <li><textarea cols="40" id="comments" name="comments" placeholder="Tell us more about your experience at the bike shop specified. Crowdsourced data can help other Cyclists! (Please make sure all information is correct)" rows="5"></textarea></li>                                                
-                    </ul>
-                    <input style="position:absolute; top:-1000px" tabindex="-1" type="submit">
-                </fieldset>
-            </form>
-        </div>
-        <script src="https://unpkg.com/leaflet@0.7.7/dist/leaflet.js"></script>
-        <script src="//cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-        <script src="https://rawgit.com/k4r573n/leaflet-control-osm-geocoder/master/Control.OSMGeocoder.js"></script>
-        <script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-        <script src="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"></script>
-        <script charset="utf-8" src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.67.0/dist/L.Control.Locate.min.js"></script>
-        <script src="https://rawgit.com/mapshakers/leaflet-control-window/master/src/L.Control.Window.js"></script>
-        <script src="https://github.com/anditabinas/mhawhereness/blob/master/leaflet.markercluster.js"></script>
-        <script src="https://github.com/anditabinas/mhawhereness/blob/master/leaflet-easy-button.js"></script>
-        <script src="https://github.com/anditabinas/mhawhereness/blob/master/leaflet-tag-filter-button.js"></script>
-        <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
-        <!--	<script src='https://github.com/anditabinas/mhawhereness/blob/master/leaflet-routing-machine.js'></script> -->
-        <script type="text/javascript" src="dist/leaflet-control-credits.js"></script>
 
-        <script>
-            var config = { //TODO: Change to your username, insert function on Carto, and Carto tablename
-                cartoUsername: "marjorieaboganda",
-                cartoInsertFunction: "insert_crowd_mapping_data",
-                cartoTablename: "bikeshops",
-                mapcenter: [12.85985, 114.03808],
-                drawOptions: {
-                    draw: {
-                        polygon: false,
-                        polyline: false,
-                        rectangle: false,
-                        circle: false,
-                        circlemarker: false,
-                        marker: true
-                    },
-                    edit: false,
-                    remove: false
-                }
-            };
+		// Add Data from Carto using the SQL API
+		// Declare Variables
+		// Create Global Variable to hold Carto points
+		var cartoData = null;
 
-            var cartoData = null; //These adds data from Carto using the SQL API, declares variables, and writes the SQL selection query
-            var sqlQuery = "SELECT the_geom, name, address, comments " + config.cartoTablename;
-            var map = L.map('map', {
-                center: config.mapcenter,
-                zoom: 5
-            }); // Creates the Leaflet map object
-            map.addControl(new L.Control.Fullscreen());
+		// Write SQL Selection Query to be Used on Carto Table
+		var sqlQuery = "SELECT the_geom, description, name FROM " + config.cartoTablename;
 
-            var Map = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-                attribution: '<a href="https://www.openstreetmap.org/copyright>OpenStreetMap</a>, contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>',
-                subdomains: 'abcd',
-                maxZoom: 20 //Adds the tilelayer basemap; I used my mapbox style here.
-            });
-            Map.addTo(map);
 
-            var osmGeocoder = new L.Control.OSMGeocoder({
-                position: 'topleft'
-            }); //Adds Search toolbar; OSMGeocoder       
-            map.addControl(osmGeocoder);
+		// Create Leaflet map object
+		var map = L.map('map', { center: config.mapcenter, zoom: 13});
+		// Add Tile Layer basemap
+		// Find your own at https://leaflet-extras.github.io/leaflet-providers/preview/
+		var CartoDB_Positron = L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
+			attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://cartodb.com/attributions">CartoDB</a>',
+			subdomains: 'abcd',
+			maxZoom: 19
+		});
 
-            var lc = L.control.locate({ //Adds Locate Control; to locate the user's location on the map
-                position: 'topleft',
-                icon: 'fa fa-hand-o-down'
-            });
-            map.addControl(lc);
+		CartoDB_Positron.addTo(map);
 
-            var getData = "https://" + config.cartoUsername + ".carto.com/api/v2/sql?format=GeoJSON&q=" + sqlQuery; //Fetches data input on the carto database
-            function getGeoJSON() {
-                $.getJSON(getData, function(data) {
-                    cartoData = L.geoJson(data, {
-                        onEachFeature: function(feature, layer) {
-                            layer.bindPopup('<b>Name of Bike Shop: <\/b>' + feature.properties.name + '<br>' + '<b>Address: <\/b>' + feature.properties.address + '<br>' + '<b>Comments: <\/b>' + feature.properties.comments + '');
-                        }
-                    }).addTo(map);
-                });
-            }
-            getGeoJSON();
-            var drawnItems = new L.FeatureGroup();
-            var drawControl = new L.Control.Draw(config.drawOptions);
-            var controlOnMap = false;
+		//Fetches
+		var getData = "https://" + config.cartoUsername + ".carto.com/api/v2/sql?format=GeoJSON&q=" + sqlQuery;
 
-            function startEdits() {
-                if (controlOnMap === true) {
-                    map.removeControl(drawControl);
-                    controlOnMap = false;
-                }
-                map.addControl(drawControl);
-                controlOnMap = true;
-            }
+		function getGeoJSON() {
+			$.getJSON(getData, function (data) {
+				cartoData = L.geoJson(data, {
+					onEachFeature: function (feature, layer) {
+						layer.bindPopup('' + feature.properties.description + '<br>Submitted by ' + feature.properties.name + '');
+					}
+				}).addTo(map);
+			});
+		}
 
-            function stopEdits() {
-                map.removeControl(drawControl);
-                controlOnMap = false;
-            }
-            map.on(L.Draw.Event.CREATED, function(e) {
-                var layer = e.layer;
-                map.addLayer(drawnItems);
-                drawnItems.addLayer(layer);
-                dialog.dialog("open");
-            });
+		getGeoJSON();
 
-            var dialog = $("#dialog").dialog({
-                autoOpen: false,
-                height: 450,
-                width: 500,
-                modal: true,
-                position: {
-                    my: "center center",
-                    at: "center center",
-                    of: "#map"
-                },
-                buttons: {
-                    Submit: setData,
-                    Cancel: function() {
-                        dialog.dialog("close");
-                        refreshLayer();
-                    }
-                },
-                close: function() {
-                    form[0].reset();
-                    refreshLayer();
-                    console.log("Dialog closed");
-                }
-            });
+		var drawnItems = new L.FeatureGroup();
 
-            form = dialog.find("form").on("submit", function(event) {
-                event.preventDefault();
-                setData();
-            });
+		var drawControl = new L.Control.Draw(config.drawOptions);
+		var controlOnMap = false;
+		function startEdits() {
+			if (controlOnMap === true) {
+				map.removeControl(drawControl);
+				controlOnMap = false;
+			}
+			map.addControl(drawControl);
+			controlOnMap = true;
+		}
+		function stopEdits() {
+			map.removeControl(drawControl);
+			controlOnMap = false;
+		}
 
-            function setData() {
-      			var enteredName = "'" + JSON.stringify(name.value.replace("'", "''")) + "'"
-      			var enteredAddress = "'" + JSON.stringify(address.value.replace("'", "''")) + "'"                 
-      			var enteredComments = "'" + JSON.stringify(comments.value.replace("'", "''")) + "'";                      
 
-                drawnItems.eachLayer(function(layer) {
-                    var drawing = "'" + JSON.stringify(layer.toGeoJSON().geometry) + "'", //Converts the drawing to a GeoJSON
-                        sql = "SELECT " + config.cartoInsertFunction + "("; //Constructs the SQL Query from the entered parameters on the dialog/form
-                    sql += drawing;
-                    sql += "," + enteredName;
-                    sql += "," + enteredAddress;                    
-                    sql += "," + enteredComments;
-                    sql += ");";
-                    console.log(drawing);
+		map.on(L.Draw.Event.CREATED, function (e) {
+	        var layer = e.layer;
+			map.addLayer(drawnItems);
+			drawnItems.addLayer(layer);
+			dialog.dialog("open");
+		});
+		
+		var dialog = $("#dialog").dialog({
+			autoOpen: false,
+			height: 300,
+			width: 350,
+			modal: true,
+			position: {
+				my: "center center",
+				at: "center center",
+				of: "#map"
+			},
+			buttons: {
+				"Add to Database": setData,
+				Cancel: function () {
+					dialog.dialog("close");
+					refreshLayer();				
+				}
+			},
+			close: function () {
+				form[0].reset();
+				refreshLayer();
+				console.log("Dialog closed");
+			}
+		});
 
-                    $.ajax({
-                        type: 'POST',
-                        url: 'https://' + config.cartoUsername + '.carto.com/api/v2/sql', //Sending the data to Carto
-                        crossDomain: true,
-                        data: {
-                            "q": sql
-                        },
-                        dataType: 'json',
-                        success: function(responseData, textStatus, jqXHR) {
-                            console.log("Data saved");
-                        },
-                        error: function(responseData, textStatus, errorThrown) {
-                            console.log("Problem saving the data");
-                        }
-                    });
-                    var newData = layer.toGeoJSON();
-                        newData.properties.name = name.value;
-                        newData.properties.address = address.value;
-                        newData.properties.comments = comments.value;                    
-                    cartoData.addData(newData);
-                });
+		form = dialog.find("form").on("submit", function (event) {
+			event.preventDefault();
+			setData();
+		});
 
-                dialog.dialog("close");
-            }
+		function setData() {
+			//.replace() doubles each single quote in order to escape them for PostgreSQL 
+			//so that user input containing single quotes doesn't escape the SQL function
+			//JSON.stringify properly escapes double quotes " so they don't break the SQL function either https://stackoverflow.com/questions/24559625/javascript-escape-double-quotes
+			//There might be a better way https://stackoverflow.com/questions/57844173/how-can-i-sanitize-user-input-data-to-be-inserted-into-my-carto-table
+			var enteredUsername = "'" + JSON.stringify(username.value.replace("'", "''")) + "'"
+			var enteredDescription = "'" + JSON.stringify(description.value.replace("'", "''")) + "'";
+			drawnItems.eachLayer(function (layer) {
+			//Convert the drawing to a GeoJSON to pass to the Carto sql database
+				var drawing = "'" + JSON.stringify(layer.toGeoJSON().geometry) + "'",
 
-            function refreshLayer() {
-                console.log("drawnItems has been cleared");
-                map.removeLayer(drawnItems);
-                drawnItems = new L.FeatureGroup();
-            }
-        </script>
-    </body>
+				  //Construct the SQL query to insert data from the three parameters: the drawing, the input username, and the input description of the drawn shape
+					sql = "SELECT " + config.cartoInsertFunction + "(";
+				sql += drawing;
+				sql += "," + enteredDescription;
+				sql += "," + enteredUsername;
+				sql += ");";
 
+				console.log(drawing);
+
+				//Sending the data
+				$.ajax({
+					type: 'POST',
+					url: 'https://' + config.cartoUsername + '.carto.com/api/v2/sql',
+					crossDomain: true,
+					data: {"q": sql},
+					dataType: 'json',
+					success: function (responseData, textStatus, jqXHR) {
+						console.log("Data saved");
+					},
+					error: function (responseData, textStatus, errorThrown) {
+
+						console.log("Problem saving the data");
+					}
+				});
+
+				/* 
+				* Transfer submitted drawing to the Carto layer, this results in the user's data appearing on the map without
+				* requerying the database (see the refreshLayer() function for an alternate way of doing this) 
+				*/
+				var newData = layer.toGeoJSON();
+				  newData.properties.description = description.value;
+				  newData.properties.name = username.value;
+
+				cartoData.addData(newData);
+
+			});
+			
+			dialog.dialog("close");
+		}
+		function refreshLayer() {
+			console.log("drawnItems has been cleared");
+			map.removeLayer(drawnItems);
+			drawnItems = new L.FeatureGroup();
+		/* 
+			This would refresh the data-layer to include new data from the Carto table after each drawing is submitted. 
+		*/
+		//      if (map.hasLayer(cartoData)) {
+		//        map.removeLayer(cartoData);
+		//      };
+		//      getGeoJSON();
+		}
+    </script>
+  </body>
 </html>
+
