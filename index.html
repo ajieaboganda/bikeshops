@@ -188,14 +188,15 @@
 
                 drawnItems.eachLayer(function(layer) {
                     var drawing = "'" + JSON.stringify(layer.toGeoJSON().geometry) + "'", //Converts the drawing to a GeoJSON
-                        sql = "SELECT " + config.cartoInsertFunction + "("; //Constructs the SQL Query from the entered parameters on the dialog/form
+                    var sql = "SELECT " + config.cartoInsertFunction + "("; //Constructs the SQL Query from the entered parameters on the dialog/form
                     sql += drawing;
                     sql += "," + enteredName;
                     sql += "," + enteredAddress;                    
                     sql += "," + enteredComments;
                     sql += ");";
                     console.log(drawing);
-
+                    
+                var cartoDBusername = "marjorieaboganda"
                     $.ajax({
                         type: 'POST',
                         url: 'https://' + config.cartoUsername + '.carto.com/api/v2/sql', //Sending the data to Carto
